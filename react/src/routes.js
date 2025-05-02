@@ -44,7 +44,7 @@ const routes = [
         )
       },
       {
-        path: '/projects/:id',M
+        path: '/projects/:id',
         element: (
           <PrivateRoute
             allowedRoles={['admin', 'moderator', 'user']}

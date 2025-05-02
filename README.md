@@ -9,7 +9,7 @@ Branch Information:
 - Frontend: Please ensure you are on the master branch while working on frontend tasks.
 - Backend: Similarly, ensure the master branch is checked out for backend development.
 
-all code 
+all code branch
 git checkout master 
 
 some command for frontend run 
@@ -22,3 +22,8 @@ Some command for backend run
  php artisan db:seed --class=AdminUserSeeder
  php artisan serve
 
+
+
+admin 
+email = admin@test.com
+pass  = password
