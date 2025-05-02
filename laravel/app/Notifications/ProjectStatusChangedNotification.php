@@ -1,23 +1,29 @@
 <?php
 
 namespace App\Notifications;
+
 use App\Models\Project;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ProjectSubmittedNotification extends Notification
+class ProjectStatusChangedNotification extends Notification
 {
     use Queueable;
-    public $project;
 
+
+    public $project;
+    public $status;
+    public $reason;
     /**
      * Create a new notification instance.
      */
-    public function __construct(Project $project)
+    public function __construct(Project $project, $status, $reason = null)
     {
         $this->project = $project;
+        $this->status = $status;
+        $this->reason = $reason;
     }
 
     /**
@@ -27,7 +33,6 @@ class ProjectSubmittedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-
         return ['mail'];
     }
 
@@ -36,12 +41,18 @@ class ProjectSubmittedNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-        ->subject('New Project Submitted')
-        ->line('A new project has been submitted for review.')
-        ->line('Project Title: ' . $this->project->title)
-        ->action('View Project', url('/projects/' . $this->project->id))
+        $mail = (new MailMessage)
+        ->subject('Project Status Updated')
+        ->line('Your project status has been updated to: ' . ucfirst($this->status));
+
+        if ($this->status === 'rejected' && $this->reason) {
+        $mail->line('Reason: ' . $this->reason);
+        }
+
+        $mail->action('View Project', url('/projects/' . $this->project->id))
         ->line('Thank you for using our application!');
+
+        return $mail;
     }
 
     /**
