@@ -1,11 +1,24 @@
-<h2>Project Explanation</h2>
-<p>
-    The project involves creating a web application that allows users to submit their projects for approval.
-    The application should have a form that allows users to upload a file and enter a title and description
-    for their project. The application should then display the submitted projects on a separate page,
-    and allow an administrator to approve or reject the projects.
-</p>
-<p>
-    A video explanation of the project can be found at:
-    <a href="https://drive.google.com/file/d/1ga3JGkJBG_FdsdgLVnNln5X4-PF_DuRq/view?usp=sharing">https://drive.google.com/file/d/1ga3JGkJBG_FdsdgLVnNln5X4-PF_DuRq/view?usp=sharing</a>
-</p>
+Project Overview
+
+This project focuses on developing a comprehensive web application that enables users to submit their projects for approval. The application will feature a user-friendly form for uploading files, and entering a title and description for each project. Submitted projects will be displayed on a dedicated page, and an administrator will have the functionality to approve or reject them.
+
+For a detailed walkthrough of the project, please watch the video here: https://drive.google.com/file/d/1ga3JGkJBG_FdsdgLVnNln5X4-PF_DuRq/view?usp=sharing
+
+Branch Information:
+
+- Frontend: Please ensure you are on the master branch while working on frontend tasks.
+- Backend: Similarly, ensure the master branch is checked out for backend development.
+
+all code 
+git checkout master 
+
+some command for frontend run 
+
+ npm install
+ npm start
+
+Some command for backend run 
+ php artisan migrate
+ php artisan db:seed --class=AdminUserSeeder
+ php artisan serve
+
