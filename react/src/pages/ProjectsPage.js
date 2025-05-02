@@ -19,7 +19,12 @@ import {
   InputLabel,
   Checkbox,
   TablePagination,
-  TableSortLabel
+  TableSortLabel,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
 } from '@mui/material';
 import { useAuth } from '../contexts/AuthContext';
 import projectService from '../api/project';
@@ -41,6 +46,9 @@ function ProjectsPage() {
   const [orderBy, setOrderBy] = useState('created_at');
   const [statusFilter, setStatusFilter] = useState('all');
   const [actionLoading, setActionLoading] = useState(false);
+  const [openRejectDialog, setOpenRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [totalProjects, setTotalProjects] = useState(0);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -49,9 +57,13 @@ function ProjectsPage() {
         const params = {
           sort: orderBy,
           status: statusFilter === 'all' ? null : statusFilter,
+          page: page + 1,
+          per_page: rowsPerPage,
         };
         const data = await projectService.getAll(params);
         setProjects(data.data);
+        setTotalProjects(data.meta.total);
+        setRowsPerPage(data.meta.per_page);
       } catch (error) {
         console.error('Error fetching projects:', error);
       } finally {
@@ -60,7 +72,33 @@ function ProjectsPage() {
     };
 
     fetchProjects();
-  }, [orderBy, order, statusFilter]);
+  }, [orderBy, order, statusFilter, page, rowsPerPage]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setLoading(true);
+        const params = {
+          sort: orderBy,
+          status: statusFilter === 'all' ? null : statusFilter,
+          page: page + 1,
+          per_page: rowsPerPage,
+        };
+        const data = await projectService.getAll(params);
+        setProjects(data.data);
+        setTotalProjects(data.meta.total);
+        setRowsPerPage(data.meta.per_page);
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (page > 0) {
+      fetchProjects();
+    }
+  }, [page]);
 
   const handleSelectAllClick = (event) => {
     if (event.target.checked) {
@@ -76,16 +114,9 @@ function ProjectsPage() {
     let newSelected = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
+      newSelected = [...selected, id];
+    } else {
+      newSelected = selected.filter((item) => item !== id);
     }
 
     setSelected(newSelected);
@@ -114,18 +145,42 @@ function ProjectsPage() {
   const handleBulkAction = async (action) => {
     try {
       setActionLoading(true);
-      await projectService.bulkAction(action, selected);
+      if (action === 'reject') {
+        if (rejectionReason.trim() === '') {
+          alert('Please provide a rejection reason');
+          return;
+        }
+        await projectService.bulkAction(action, selected, rejectionReason);
+      } else {
+        await projectService.bulkAction(action, selected);
+      }
       const data = await projectService.getAll({
         sort: orderBy,
         status: statusFilter === 'all' ? null : statusFilter,
+        page: page + 1,
+        per_page: rowsPerPage,
       });
       setProjects(data.data);
+      setTotalProjects(data.meta.total);
       setSelected([]);
+      setOpenRejectDialog(false);
     } catch (error) {
       console.error('Error performing bulk action:', error);
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleOpenRejectDialog = () => {
+    setOpenRejectDialog(true);
+  };
+
+  const handleCloseRejectDialog = () => {
+    setOpenRejectDialog(false);
+  };
+
+  const handleRejectionReasonChange = (event) => {
+    setRejectionReason(event.target.value);
   };
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
@@ -176,7 +231,7 @@ function ProjectsPage() {
               <Button
                 variant="contained"
                 color="error"
-                onClick={() => handleBulkAction('reject')}
+                onClick={handleOpenRejectDialog}
                 disabled={actionLoading}
               >
                 {actionLoading ? <CircularProgress size={24} /> : 'Reject Selected'}
@@ -220,6 +275,15 @@ function ProjectsPage() {
                     Status
                   </TableSortLabel>
                 </TableCell>
+                <TableCell align="center">
+                  <TableSortLabel
+                    active={orderBy === 'file_path'}
+                    direction={orderBy === 'file_path' ? order : 'asc'}
+                    onClick={() => handleRequestSort('file_path')}
+                  >
+                    Image
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell>
                   <TableSortLabel
                     active={orderBy === 'created_at'}
@@ -229,56 +293,65 @@ function ProjectsPage() {
                     Submitted
                   </TableSortLabel>
                 </TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'updated_at'}
+                    direction={orderBy === 'updated_at' ? order : 'asc'}
+                    onClick={() => handleRequestSort('updated_at')}
+                  >
+                    Updated
+                  </TableSortLabel>
+                </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {projects
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((project) => {
-                  const isItemSelected = isSelected(project.id);
-                  return (
-                    <TableRow
-                      hover
-                      key={project.id}
-                      selected={isItemSelected}
-                      onClick={(event) => user?.role === 'admin' && handleClick(event, project.id)}
-                      sx={{ cursor: user?.role === 'admin' ? 'pointer' : 'default' }}
-                    >
-                      {user?.role === 'admin' && (
-                        <TableCell padding="checkbox">
-                          <Checkbox
-                            checked={isItemSelected}
-                          />
-                        </TableCell>
-                      )}
-                      <TableCell>{project.title}</TableCell>
-                      <TableCell>
-                        {project.description.length > 50
-                          ? `${project.description.substring(0, 50)}...`
-                          : project.description}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={project.status}
-                          color={statusColors[project.status]}
+              {projects.map((project, index) => {
+                const isItemSelected = isSelected(project.id);
+                const row = index >= page * rowsPerPage && index < (page + 1) * rowsPerPage;
+                return row && (
+                  <TableRow
+                    hover
+                    key={project.id}
+                    selected={isItemSelected}
+                    onClick={(event) => user?.role === 'admin' && handleClick(event, project.id)}
+                    sx={{ cursor: user?.role === 'admin' ? 'pointer' : 'default' }}
+                  >
+                    {user?.role === 'admin' && (
+   <TableCell padding="checkbox">
+                        <Checkbox
+                          checked={isItemSelected}
                         />
                       </TableCell>
-                      <TableCell>
-                        {new Date(project.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          href={`/projects/${project.id}`}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
+                    )}
+                    <TableCell>{project.title}</TableCell>
+                    <TableCell>
+                      {project.description.length > 50
+                        ? `${project.description.substring(0, 50)}...`
+                        : project.description}
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+                        color={statusColors[project.status]}
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <img
+                        src={'http://localhost:8000/project_files/'+project.file_url}
+                        alt={project.title}
+                        width={40}
+                        height={40}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).format(new Date(project.created_at))}
+                    </TableCell>
+                    <TableCell>
+                      {new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric' }).format(new Date(project.updated_at))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
                   <TableCell colSpan={6} />
@@ -290,15 +363,46 @@ function ProjectsPage() {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={projects.length}
+          count={totalProjects}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
         />
       </Paper>
+      <Dialog
+        open={openRejectDialog}
+        onClose={handleCloseRejectDialog}
+        aria-labelledby="reject-dialog-title"
+        aria-describedby="reject-dialog-description"
+      >
+        <DialogTitle id="reject-dialog-title">Reject Selected Projects</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="reject-dialog-description">
+            Are you sure you want to reject the selected projects? Please enter the reason for rejection.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="rejection-reason"
+            label="Reason"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={rejectionReason}
+            onChange={(event) => setRejectionReason(event.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseRejectDialog}>Cancel</Button>
+          <Button onClick={() => handleBulkAction('reject')} disabled={rejectionReason.trim() === ''}>
+            Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
 
 export default ProjectsPage;
+

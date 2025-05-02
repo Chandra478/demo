@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\porject;
 use Illuminate\Http\Request;
 use App\Models\Project;
 use App\Http\Resources\ProjectResource;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-class PorjectController extends Controller
+use App\Models\ApprovalLog;
+use App\Models\User;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProjectSubmitted;
+use App\Notifications\ProjectApproved;
+
+class ProjectController extends Controller
 {
     public function __construct()
     {
@@ -17,18 +22,20 @@ class PorjectController extends Controller
 
     public function index(Request $request)
     {
+
         $query = Project::with(['user', 'approvalLogs']);
 
         if ($request->user() && $request->user()->role === 'user') {
             $query->where('user_id', $request->user()->id);
         }
 
-        if ($request->has('status')) {
+        if ($request->status) {
+
             $query->where('status', $request->status);
         }
 
         if ($request->has('sort')) {
-            $query->orderBy($request->sort, $request->direction ?? 'asc');
+            $query->orderBy($request->sort, $request->direction ?? 'Desc');
         }
 
         return ProjectResource::collection($query->paginate(10));
@@ -42,13 +49,15 @@ class PorjectController extends Controller
             'file' => 'required|file|max:10240', // 10MB max
         ]);
 
-        $filePath = $request->file('file')->store('project_files');
+        $file = $request->file('file');
+        $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+        $file->move('project_files', $fileName);
 
         $project = Project::create([
             'user_id' => $request->user()->id,
             'title' => $request->title,
             'description' => $request->description,
-            'file_path' => $filePath,
+            'file_path' => $fileName,
             'status' => 'pending',
         ]);
 

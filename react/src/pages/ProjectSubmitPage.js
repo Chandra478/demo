@@ -31,6 +31,7 @@ function ProjectSubmitPage() {
       file: null,
     },
     validationSchema: validationSchema,
+    validateOnChange: true,
     onSubmit: async (values) => {
       try {
         setLoading(true);
@@ -114,7 +115,7 @@ function ProjectSubmitPage() {
             variant="contained"
             fullWidth
             type="submit"
-            disabled={loading}
+            disabled={loading || !formik.isValid}
           >
             {loading ? <CircularProgress size={24} /> : 'Submit Project'}
           </Button>

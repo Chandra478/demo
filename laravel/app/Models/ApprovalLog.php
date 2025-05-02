@@ -9,6 +9,12 @@ class ApprovalLog extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'project_id',
+        'user_id',
+        'action',
+    ];
+
 
     public function project()
 {

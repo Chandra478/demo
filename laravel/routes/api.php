@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\PorjectController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\StatsController;
 /*
 |--------------------------------------------------------------------------
@@ -31,11 +31,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::apiResource('projects', PorjectController::class)->except(['update', 'destroy']);
-    Route::patch('/projects/{project}/approve', [PorjectController::class, 'approve']);
-    Route::patch('/projects/{project}/reject', [PorjectController::class, 'reject']);
-    Route::post('/projects/bulk-action', [PorjectController::class, 'bulkAction']);
+    Route::get('/projects', [ProjectController::class, 'index']);
+    Route::apiResource('projects', ProjectController::class)
+        ->except(['index', 'update', 'destroy']);
+    Route::patch('/projects/{project}/approve', [ProjectController::class, 'approve']);
+    Route::patch('/projects/{project}/reject', [ProjectController::class, 'reject']);
+    Route::post('/projects/bulk-action', [ProjectController::class, 'bulkAction']);
 
     Route::get('/stats', [StatsController::class, 'index']);
-    Route::post('/projects', [PorjectController::class, 'store']);
 });
+

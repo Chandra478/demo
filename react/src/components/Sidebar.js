@@ -1,5 +1,5 @@
 // src/components/Sidebar.js
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Drawer,
@@ -8,17 +8,24 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Toolbar // Add this import
+  Toolbar
 } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import LogoutIcon from '@mui/icons-material/Logout';
 
 const drawerWidth = 240;
 
 function Sidebar() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <Drawer
@@ -29,7 +36,7 @@ function Sidebar() {
         [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
       }}
     >
-      <Toolbar /> {/* This is now properly imported */}
+      <Toolbar />
       <List>
         <ListItem button component={Link} to="/">
           <ListItemIcon>
@@ -49,7 +56,7 @@ function Sidebar() {
           </ListItemIcon>
           <ListItemText primary="Submit Project" />
         </ListItem>
-        {user?.role === 'admin' && (
+        {/* {user?.role === 'admin' && (
           <>
             <Divider />
             <ListItem button component={Link} to="/admin">
@@ -59,7 +66,14 @@ function Sidebar() {
               <ListItemText primary="Admin Panel" />
             </ListItem>
           </>
-        )}
+        )} */}
+        <Divider />
+        <ListItem button onClick={handleLogout}>
+          <ListItemIcon>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText primary="Logout" />
+        </ListItem>
       </List>
     </Drawer>
   );

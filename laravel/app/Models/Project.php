@@ -7,7 +7,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Project extends Model
 {
+
     use HasFactory;
+protected $fillable = [
+    'user_id',
+    'title',
+    'description',
+    'file_path',
+    'status',
+    'rejection_reason',
+    'created_at',
+    'updated_at',
+];
 
     public function user()
 {
